@@ -8,6 +8,18 @@ import csv
 import matplotlib.pyplot as plt
 
 
+def hyojun(route):
+    dis = []
+    for i in range(len(route)):
+        a = 0
+        if len(route[i]) != 0:
+            for j in range(len(route[i]) - 1):
+                a += c[route[i][j]][route[i][j + 1]]
+            a += c[0][route[i][0]]
+            a += c[0][route[i][j + 1]]
+        dis.append(a)
+    return np.std(dis)
+
 def Setting(FILENAME):
     mat_destination = []   # 目的地の情報(並び替え後)
     mat_destination2 = []  # 目的地の情報(並び替え前)
@@ -213,12 +225,13 @@ def newRoute(route, requestnode, neighbour):
     return new_route
 
 
-def penalty_sum(route, requestnode):
-    parameta = np.zeros(3)
+def penalty_sum(route, requestnode): # q_s:キャパシティ違反 d_s:１台あたりの移動時間違反 t_s:１人あたりの移動時間違反
+    parameta = np.zeros(4)
     c_s = Route_cost(route)
     q_s = capacity(route)
     d_s = 0
     t_s = 0
+    h_s = hyojun(route)
     for i in range(len(route)):
         ROUTE_TIME_info = time_caluculation(route[i], requestnode)
         d_s_s = ROUTE_TIME_info[0][-1] - T_max
@@ -227,11 +240,12 @@ def penalty_sum(route, requestnode):
         d_s = d_s + d_s_s
         t_s = t_s + ride_time_penalty(ROUTE_TIME_info[2])
 
-    penalty = c_s + keisu[0] * q_s + keisu[1] * d_s + keisu[2] * t_s
-    no_penalty = c_s + q_s + d_s + t_s
+    penalty = c_s + keisu[0] * q_s + keisu[1] * d_s + keisu[2] * t_s + h_s
+    no_penalty = c_s + q_s + d_s + t_s + h_s
     parameta[0] = q_s
     parameta[1] = d_s
     parameta[2] = t_s
+    parameta[3] = h_s
     return penalty, parameta, no_penalty
 
 
@@ -511,8 +525,8 @@ if __name__ == '__main__':
     c = np.zeros((n + 1, n + 1), dtype=float, order='C')
     c = Setting(FILENAME)[3]  # 各ノード間のコスト
 
-    keisu = np.ones(3)
+    keisu = np.ones(4)
     t1 = time.time()
-    main(500)
+    main(300)
     t2 = time.time()
     print(f"time:{t2 - t1}")
